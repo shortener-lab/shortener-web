@@ -1,4 +1,5 @@
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { anonymousAuth, fakeAuth, renderWithProviders } from '../test/render';
@@ -33,6 +34,20 @@ describe('RequireAuth', () => {
     const error = Object.assign(new Error('invalid_grant'), { source: 'signinCallback' as const });
     const { auth } = renderWithProviders(ui, { route: '/links', auth: anonymousAuth({ error }) });
     expect(screen.getByRole('alert')).toHaveTextContent('invalid_grant');
+    expect(auth.signinRedirect).not.toHaveBeenCalled();
+  });
+
+  it('erro de login: oferece "Entrar de novo", que volta para o caminho atual', async () => {
+    const error = Object.assign(new Error('invalid_grant'), { source: 'signinCallback' as const });
+    const { auth } = renderWithProviders(ui, { route: '/links?x=1', auth: anonymousAuth({ error }) });
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar de novo' }));
+    expect(auth.signinRedirect).toHaveBeenCalledWith({ state: { returnTo: '/links?x=1' } });
+  });
+
+  it('renovação silenciosa falhou, mas o usuário segue logado: o conteúdo continua', () => {
+    const error = Object.assign(new Error('Failed to fetch'), { source: 'renewSilent' as const });
+    const { auth } = renderWithProviders(ui, { route: '/links', auth: fakeAuth({ error }) });
+    expect(screen.getByText('área protegida')).toBeInTheDocument();
     expect(auth.signinRedirect).not.toHaveBeenCalled();
   });
 
