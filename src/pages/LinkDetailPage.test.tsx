@@ -14,6 +14,21 @@ const ui = (
 );
 
 describe('LinkDetailPage', () => {
+  it('mostra quando as estatísticas foram atualizadas e quando atualizam de novo', async () => {
+    const body = { ...stats(), computedAt: new Date().toISOString(), refreshInSeconds: 42 };
+    server.use(http.get(`${TEST_API}/links/abc1234/stats`, () => HttpResponse.json(body)));
+    renderWithProviders(ui, { route: '/links/abc1234' });
+    expect(await screen.findByText(/Atualizado às/)).toBeInTheDocument();
+    expect(screen.getByText('próxima atualização em 42 s')).toBeInTheDocument();
+  });
+
+  it('api sem os campos de frescor: não mostra o texto', async () => {
+    server.use(http.get(`${TEST_API}/links/abc1234/stats`, () => HttpResponse.json(stats())));
+    renderWithProviders(ui, { route: '/links/abc1234' });
+    expect(await screen.findByTestId('total-clicks')).toBeInTheDocument();
+    expect(screen.queryByText(/Atualizado às/)).not.toBeInTheDocument();
+  });
+
   it('mostra total, 30 barras e a tabela de navegadores', async () => {
     const today = new Date().toISOString().slice(0, 10);
     server.use(

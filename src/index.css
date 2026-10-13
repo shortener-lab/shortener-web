@@ -115,3 +115,5 @@ th.num, td.num { text-align: right; }
 @media (max-width: 560px) {
   .link-item { flex-direction: column; }
 }
+
+.freshness { margin: 0.5rem 0 0; font-size: 0.85rem; }

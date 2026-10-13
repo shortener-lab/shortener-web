@@ -1,11 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { myLink, stats } from '../test/fixtures';
 import { createWrapper, fakeAuth, TEST_TOKEN } from '../test/render';
 import { server, TEST_API } from '../test/server';
 import { completeSignin } from '../auth/oidc';
 import { useCreateLink, useMyLinks, useStats } from './hooks';
+
+afterEach(() => vi.useRealTimers());
 
 describe('useMyLinks', () => {
   it('pagina com o cursor e para quando nextCursor é null', async () => {
@@ -92,6 +94,38 @@ describe('401', () => {
     const { result } = renderHook(() => useStats('abc1234'), { wrapper: createWrapper({ auth }) });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(auth.signinRedirect).not.toHaveBeenCalled();
+  });
+
+  it('useStats busca de novo quando o servidor diz que o cache expira (+ até 2 s de folga)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let calls = 0;
+    server.use(
+      http.get(`${TEST_API}/links/abc1234/stats`, () => {
+        calls += 1;
+        return HttpResponse.json({ ...stats({ totalClicks: calls }), computedAt: new Date().toISOString(), refreshInSeconds: 5 });
+      }),
+    );
+    const { result } = renderHook(() => useStats('abc1234'), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.data?.totalClicks).toBe(1));
+    await act(() => vi.advanceTimersByTimeAsync(4_000));
+    expect(calls).toBe(1); // ainda dentro dos 5 s do cache
+    await act(() => vi.advanceTimersByTimeAsync(3_100));
+    await waitFor(() => expect(result.current.data?.totalClicks).toBe(2));
+  });
+
+  it('useStats sem refreshInSeconds (api antiga) não fica buscando sozinho', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let calls = 0;
+    server.use(
+      http.get(`${TEST_API}/links/abc1234/stats`, () => {
+        calls += 1;
+        return HttpResponse.json(stats());
+      }),
+    );
+    const { result } = renderHook(() => useStats('abc1234'), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await act(() => vi.advanceTimersByTimeAsync(120_000));
+    expect(calls).toBe(1);
   });
 
   it('useStats devolve as estatísticas', async () => {

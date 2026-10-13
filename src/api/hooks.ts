@@ -61,6 +61,13 @@ export function useStats(code: string) {
   const query = useQuery({
     queryKey: linkKeys.stats(code),
     queryFn: () => api.getStats(code),
+    // O servidor diz quando o cache dele expira; buscamos logo depois. A folga aleatória (jitter)
+    // evita que todas as telas abertas no mesmo link peçam no mesmo segundo.
+    refetchInterval: (query) => {
+      const seconds = query.state.data?.refreshInSeconds;
+      if (seconds === undefined) return false;
+      return (Math.max(1, seconds) + Math.random() * 2) * 1000;
+    },
   });
   useLoginOnUnauthorized(query.error);
   return query;

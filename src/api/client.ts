@@ -22,6 +22,9 @@ const statsSchema = z.object({
   totalClicks: clicks,
   daily: z.array(z.object({ day: z.iso.date(), clicks })),
   browsers: z.array(z.object({ browser: z.string(), clicks })),
+  // Frescor, informado pela api. Opcionais: o painel convive com uma api que ainda não os manda.
+  computedAt: z.iso.datetime().optional(),
+  refreshInSeconds: z.number().int().min(0).optional(),
 });
 
 const errorBodySchema = z.object({ error: z.string() });

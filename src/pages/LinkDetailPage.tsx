@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router';
 import { ApiError, describeError } from '../api/client';
 import { useStats } from '../api/hooks';
 import { DailyChart } from '../components/DailyChart';
+import { Freshness } from '../components/Freshness';
 import { lastNDays } from '../lib/days';
 
 export function LinkDetailPage() {
@@ -37,6 +38,13 @@ export function LinkDetailPage() {
       <section className="card stat">
         <span className="muted">Total de cliques</span>
         <strong data-testid="total-clicks">{stats.totalClicks.toLocaleString('pt-BR')}</strong>
+        {stats.computedAt !== undefined && stats.refreshInSeconds !== undefined && (
+          <Freshness
+            computedAt={stats.computedAt}
+            refreshInSeconds={stats.refreshInSeconds}
+            receivedAt={query.dataUpdatedAt}
+          />
+        )}
       </section>
 
       <h2>Últimos 30 dias</h2>

@@ -115,3 +115,18 @@ describe('describeError', () => {
     expect(describeError(new TypeError('Failed to fetch'))).toBe('Algo deu errado. Tente de novo em instantes.');
   });
 });
+
+describe('getStats: frescor', () => {
+  const base = { code: 'abc1234', url: 'https://example.com/', totalClicks: 1, daily: [], browsers: [] };
+
+  it('lê computedAt e refreshInSeconds', async () => {
+    const body = { ...base, computedAt: '2026-10-13T14:32:10.000Z', refreshInSeconds: 25 };
+    server.use(http.get(`${TEST_API}/links/abc1234/stats`, () => HttpResponse.json(body)));
+    expect(await api.getStats('abc1234')).toMatchObject({ computedAt: body.computedAt, refreshInSeconds: 25 });
+  });
+
+  it('aceita uma api que ainda não manda os campos (deploy em etapas)', async () => {
+    server.use(http.get(`${TEST_API}/links/abc1234/stats`, () => HttpResponse.json(base)));
+    expect(await api.getStats('abc1234')).toEqual(base);
+  });
+});
