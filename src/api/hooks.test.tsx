@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { myLink, stats } from '../test/fixtures';
 import { createWrapper, fakeAuth, TEST_TOKEN } from '../test/render';
 import { server, TEST_API } from '../test/server';
+import { completeSignin } from '../auth/oidc';
 import { useCreateLink, useMyLinks, useStats } from './hooks';
 
 describe('useMyLinks', () => {
@@ -74,6 +75,15 @@ describe('401', () => {
     await waitFor(() =>
       expect(auth.signinRedirect).toHaveBeenCalledWith({ state: { returnTo: '/links/abc1234' } }),
     );
+  });
+
+  it('401 logo depois de um login não redireciona de novo (evita loop com o IdP)', async () => {
+    server.use(http.get(`${TEST_API}/links/abc1234/stats`, () => new HttpResponse(null, { status: 401 })));
+    completeSignin(); // acabamos de voltar do IdP, e a api ainda recusa o token novo
+    const auth = fakeAuth();
+    const { result } = renderHook(() => useStats('abc1234'), { wrapper: createWrapper({ route: '/links/abc1234', auth }) });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(auth.signinRedirect).not.toHaveBeenCalled();
   });
 
   it('erro que não é 401 não chama o login', async () => {

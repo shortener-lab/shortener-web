@@ -62,7 +62,7 @@ export function describeError(error: unknown): string {
     if (error.status === 400 && error.code === 'invalid_url') {
       return 'A API recusou a URL. Use um endereço http:// ou https:// válido.';
     }
-    if (error.status === 401) return 'Sua sessão expirou. Redirecionando para o login…';
+    if (error.status === 401) return 'Sua sessão expirou ou não foi aceita. Se não for redirecionado, saia e entre de novo.';
     if (error.status === 404) return 'Não encontrado.';
     if (error.code === 'invalid_response') return 'A API respondeu num formato inesperado.';
   }

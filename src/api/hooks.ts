@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from 'react-oidc-context';
 import { useLocation } from 'react-router';
+import { loginJustCompleted } from '../auth/oidc';
 import { getConfig } from '../config';
 import { ApiError, createApiClient, type ApiClient } from './client';
 
@@ -24,7 +25,8 @@ function useLoginOnUnauthorized(error: unknown): void {
   const unauthorized = error instanceof ApiError && error.status === 401;
 
   useEffect(() => {
-    if (unauthorized && !auth.activeNavigator) {
+    // Logo depois de um login, outro redirect viraria loop: deixamos o erro aparecer na tela.
+    if (unauthorized && !auth.activeNavigator && !loginJustCompleted()) {
       void auth.signinRedirect({ state: { returnTo: location.pathname + location.search } });
     }
   }, [unauthorized, auth, location.pathname, location.search]);

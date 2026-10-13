@@ -1,6 +1,13 @@
 import { WebStorageStateStore } from 'oidc-client-ts';
 import { describe, expect, it } from 'vitest';
-import { buildLogoutUrl, buildOidcSettings, clearAuthParamsFromUrl, returnToFrom } from './oidc';
+import {
+  buildLogoutUrl,
+  buildOidcSettings,
+  clearAuthParamsFromUrl,
+  completeSignin,
+  loginJustCompleted,
+  returnToFrom,
+} from './oidc';
 
 const cfg = {
   apiBaseUrl: 'http://localhost:3000',
@@ -53,5 +60,25 @@ describe('buildLogoutUrl', () => {
     expect(url.origin + url.pathname).toBe('https://x.auth.us-east-1.amazoncognito.com/logout');
     expect(url.searchParams.get('client_id')).toBe('abc123');
     expect(url.searchParams.get('logout_uri')).toBe('https://app.example.com/');
+  });
+});
+
+describe('completeSignin e loginJustCompleted', () => {
+  it('sem login registrado: false', () => {
+    expect(loginJustCompleted()).toBe(false);
+  });
+
+  it('limpa a URL e marca o login; vale por 30 s', () => {
+    window.history.replaceState({}, '', '/callback?code=abc&state=xyz');
+    completeSignin();
+    expect(window.location.search).toBe('');
+    const now = Date.now();
+    expect(loginJustCompleted(now + 29_000)).toBe(true);
+    expect(loginJustCompleted(now + 31_000)).toBe(false);
+  });
+
+  it('valor estranho no storage: false', () => {
+    sessionStorage.setItem('shortener.loginAt', 'lixo');
+    expect(loginJustCompleted()).toBe(false);
   });
 });
