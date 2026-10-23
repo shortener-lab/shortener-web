@@ -15,7 +15,7 @@ export function Landing() {
 
   return (
     <main className="container landing">
-      <h1>shortener</h1>
+      <h1>Encurtador de links</h1>
       <p>Encurte URLs e acompanhe os cliques de cada link.</p>
       <button type="button" onClick={() => void auth.signinRedirect({ state: { returnTo: '/links' } })}>
         Entrar

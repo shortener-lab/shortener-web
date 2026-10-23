@@ -14,6 +14,11 @@ describe('rotas', () => {
     expect(auth.signinRedirect).toHaveBeenCalledWith({ state: { returnTo: '/links' } });
   });
 
+  it('anônimo em / vê o título "Encurtador de links"', () => {
+    renderWithProviders(<AppRoutes />, { route: '/', auth: anonymousAuth() });
+    expect(screen.getByRole('heading', { name: 'Encurtador de links' })).toBeInTheDocument();
+  });
+
   it('logado em / vai direto para /links, com o e-mail no topo', async () => {
     server.use(emptyList());
     renderWithProviders(<AppRoutes />, { route: '/' });
